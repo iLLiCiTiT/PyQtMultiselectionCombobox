@@ -21,14 +21,24 @@ class MultiselectionCombobox(QtWidgets.QFrame):
         view = QtWidgets.QListView(self)
         view.setModel(view_filter)
 
+        arrow_btn = QtWidgets.QPushButton("E", self)
+
         layout = QtWidgets.QHBoxLayout(self)
-        layout.addWidget(view)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        layout.addWidget(view)
+        layout.addWidget(arrow_btn)
+
+        arrow_btn.clicked.connect(self._on_arrow_click)
+
         self.view = view
         self.model = model
+        self.arrow_btn = arrow_btn
 
+
+    def _on_arrow_click(self):
+        pass
 
 
 class MainWindow(QtWidgets.QWidget):

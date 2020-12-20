@@ -1,5 +1,5 @@
 import sys
-from Qt import QtWidgets, QtCore, QtGui
+from PySide2 import QtWidgets, QtCore, QtGui
 
 
 class ViewFilter(QtCore.QSortFilterProxyModel):
@@ -58,7 +58,14 @@ class MultiselectionCombobox(QtWidgets.QFrame):
         self.model.invisibleRootItem().appendRows(new_items)
 
     def _on_arrow_click(self):
-        pass
+        menu = QtWidgets.QMenu()
+        for row in range(self.model.rowCount()):
+            index = self.model.index(row, 0)
+            text = index.data(QtCore.Qt.DisplayRole)
+            action = QtWidgets.QAction(text, menu)
+            menu.addAction(action)
+        result = menu.exec_(QtGui.QCursor.pos())
+        print(result)
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -67,6 +74,8 @@ class MainWindow(QtWidgets.QWidget):
 
         texts = ["one", "two"]
         combobox = QtWidgets.QComboBox()
+        # combobox.setMinimumHeight(100)
+
         multiselect_combobox = MultiselectionCombobox(self)
 
         combobox.addItems(texts)

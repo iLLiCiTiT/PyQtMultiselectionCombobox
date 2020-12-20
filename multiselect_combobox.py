@@ -36,6 +36,23 @@ class MultiselectionCombobox(QtWidgets.QFrame):
         self.model = model
         self.arrow_btn = arrow_btn
 
+    def addItem(self, icon=None, text=None, userData=None):
+        item = QtGui.QStandardItem()
+        item.setData(text, QtCore.Qt.DisplayRole)
+        item.setData(icon, QtCore.Qt.DecorationRole)
+        item.setData(userData, QtCore.Qt.UserRole)
+        item.setData(QtCore.Qt.Unchecked, QtCore.Qt.CheckStateRole)
+        self.model.appendRow(item)
+
+    def addItems(self, texts):
+        new_items = []
+        for text in texts:
+            item = QtGui.QStandardItem()
+            item.setData(text, QtCore.Qt.DisplayRole)
+            item.setData(QtCore.Qt.Unchecked, QtCore.Qt.CheckStateRole)
+            new_items.append(item)
+
+        self.model.invisibleRootItem().appendRows(new_items)
 
     def _on_arrow_click(self):
         pass

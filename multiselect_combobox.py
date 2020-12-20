@@ -62,8 +62,12 @@ class MainWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        texts = ["one", "two"]
         combobox = QtWidgets.QComboBox()
         multiselect_combobox = MultiselectionCombobox(self)
+
+        combobox.addItems(texts)
+        multiselect_combobox.addItems(texts)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(combobox)

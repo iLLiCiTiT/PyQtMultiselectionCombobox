@@ -1,5 +1,5 @@
 import sys
-from PySide2 import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtCore, QtGui
 
 
 class ViewFilter(QtCore.QSortFilterProxyModel):

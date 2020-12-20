@@ -2,13 +2,24 @@ import sys
 from Qt import QtWidgets, QtCore, QtGui
 
 
+class ViewFilter(QtCore.QSortFilterProxyModel):
+    def filterAcceptsRow(self, source_row, parent_index):
+        index = parent_index.child(source_row, 0)
+        checkstate = index.data(QtCore.Qt.CheckStateRole)
+        return checkstate == QtCore.Qt.Checked
+
+
 class MultiselectionCombobox(QtWidgets.QFrame):
     def __init__(self, parent=None):
         super(MultiselectionCombobox, self).__init__(parent)
 
         model = QtGui.QStandardItemModel()
+
+        view_filter = ViewFilter()
+        view_filter.setSourceModel(model)
+
         view = QtWidgets.QListView(self)
-        view.setModel(model)
+        view.setModel(view_filter)
 
         layout = QtWidgets.QHBoxLayout(self)
         layout.addWidget(view)

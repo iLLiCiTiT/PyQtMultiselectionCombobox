@@ -170,14 +170,13 @@ class MultiSelectionComboBox(QtWidgets.QComboBox):
         painter.drawComplexControl(QtWidgets.QStyle.CC_ComboBox, option)
 
         # draw the icon and text
-        items = self.checked_items_text()
+        items = self.values(QtCore.Qt.DisplayRole)
         if not items:
             option.currentText = self.placeholder_text
             option.palette.setCurrentColorGroup(QtGui.QPalette.Disabled)
             painter.drawControl(QtWidgets.QStyle.CE_ComboBoxLabel, option)
             return
 
-        font_metricts = self.fontMetrics()
         for line, items in self.lines.items():
             top_y = (
                 option.rect.top()
@@ -186,22 +185,21 @@ class MultiSelectionComboBox(QtWidgets.QComboBox):
             )
             left_x = option.rect.left() + self.left_offset
             for item in items:
-                label_rect = font_metricts.boundingRect(item)
+                label_rect = option.fontMetrics.boundingRect(item)
                 label_height = label_rect.height()
 
+                if label_rect.height() > label_rect.width():
+                    radius = floor(label_rect.width() / 4)
+                else:
+                    radius = floor(label_rect.height() / 4)
+
                 label_rect.moveTop(top_y)
-                label_rect.moveLeft(left_x)
-                label_rect.setHeight(self.item_height)
 
                 bg_rect = QtCore.QRectF(label_rect)
-
-                radius = floor(label_rect.height() / 4)
-
+                bg_rect.moveLeft(left_x)
                 bg_rect.setWidth(label_rect.width() + (2 * radius))
 
-                left_x = bg_rect.right() + self.item_spacing
-
-                label_rect.moveLeft(label_rect.x() + floor(radius))
+                label_rect.setHeight(self.item_height)
 
                 bg_rect.setHeight(
                     label_height + (2 * self.top_bottom_padding)
@@ -209,16 +207,19 @@ class MultiSelectionComboBox(QtWidgets.QComboBox):
                 bg_rect.moveTop(bg_rect.top() + self.top_bottom_margins)
 
                 path = QtGui.QPainterPath()
-
                 path.addRoundedRect(bg_rect, radius, radius)
 
                 painter.fillPath(path, self.item_bg_color)
+
+                label_rect.moveLeft(bg_rect.x() + radius)
 
                 painter.drawText(
                     label_rect,
                     QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter,
                     item
                 )
+
+                left_x = bg_rect.right() + self.item_spacing
 
     def resizeEvent(self, *args, **kwargs):
         super(MultiSelectionComboBox, self).resizeEvent(*args, **kwargs)
@@ -227,13 +228,26 @@ class MultiSelectionComboBox(QtWidgets.QComboBox):
     def update_size_hint(self):
         self.lines = {}
 
-        items = self.checked_items_text()
+        items = self.values(QtCore.Qt.DisplayRole)
         if not items:
             self.update()
             return
 
         option = QtWidgets.QStyleOptionComboBox()
         self.initStyleOption(option)
+
+        height_radius = floor(option.fontMetrics.height() / 4)
+        item_with_width = []
+        for item in items:
+            rect = option.fontMetrics.boundingRect(item)
+            if rect.height() > rect.width():
+                radius = floor(rect.width() / 4)
+            else:
+                radius = height_radius
+
+            width = rect.width() + (2 * radius)
+            item_with_width.append((item, width))
+
         btn_rect = self.style().subControlRect(
             QtWidgets.QStyle.CC_ComboBox,
             option,
@@ -243,27 +257,23 @@ class MultiSelectionComboBox(QtWidgets.QComboBox):
 
         line = 0
         self.lines = {line: []}
-
-        font_metricts = self.fontMetrics()
-        radius = floor(font_metricts.height() / 4)
-        default_left_x = 0 + self.left_offset
-        left_x = int(default_left_x)
-        for item in items:
-            rect = font_metricts.boundingRect(item)
-            width = rect.width() + (2 * radius)
+        left_x = int(self.left_offset)
+        for item, width in item_with_width:
             right_x = left_x + width
-            if right_x > total_width:
-                left_x = int(default_left_x)
-                if self.lines.get(line):
-                    line += 1
-                    self.lines[line] = [item]
-                    left_x += width
-                else:
-                    self.lines[line] = [item]
-                    line += 1
-            else:
+
+            if right_x < total_width:
                 self.lines[line].append(item)
-                left_x = left_x + width + self.item_spacing
+                left_x += width + self.item_spacing
+
+            elif self.lines.get(line):
+                line += 1
+                self.lines[line] = [item]
+                left_x = self.left_offset + width + self.item_spacing
+
+            else:
+                self.lines[line] = [item]
+                line += 1
+                left_x = int(self.left_offset)
 
         self.update()
         self.updateGeometry()
@@ -282,33 +292,16 @@ class MultiSelectionComboBox(QtWidgets.QComboBox):
     def setItemCheckState(self, index, state):
         self.setItemData(index, state, QtCore.Qt.CheckStateRole)
 
-    def set_value(self, values):
-        for idx in range(self.count()):
-            value = self.itemData(idx, role=QtCore.Qt.UserRole)
-            if value in values:
-                check_state = QtCore.Qt.Checked
-            else:
-                check_state = QtCore.Qt.Unchecked
-            self.setItemData(idx, check_state, QtCore.Qt.CheckStateRole)
-        self.update_size_hint()
+    def values(self, role=None):
+        if role is None:
+            role = QtCore.Qt.DisplayRole
 
-    def value(self):
-        items = list()
+        output = list()
         for idx in range(self.count()):
             state = self.itemData(idx, role=QtCore.Qt.CheckStateRole)
             if state == QtCore.Qt.Checked:
-                items.append(
-                    self.itemData(idx, role=QtCore.Qt.UserRole)
-                )
-        return items
-
-    def checked_items_text(self):
-        items = list()
-        for idx in range(self.count()):
-            state = self.itemData(idx, role=QtCore.Qt.CheckStateRole)
-            if state == QtCore.Qt.Checked:
-                items.append(self.itemText(idx))
-        return items
+                output.append(self.itemData(idx, role=role))
+        return output
 
     def wheelEvent(self, event):
         event.ignore()

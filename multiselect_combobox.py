@@ -20,6 +20,9 @@ class MultiselectionCombobox(QtWidgets.QFrame):
 
         view = QtWidgets.QListView(self)
         view.setModel(view_filter)
+        view.setResizeMode(QtWidgets.QListView.Adjust)
+        view.setFlow(QtWidgets.QListView.LeftToRight)
+        view.setLayoutMode(QtWidgets.QListView.Batched)
 
         arrow_btn = QtWidgets.QPushButton("E", self)
 
